@@ -1,6 +1,7 @@
 import os
 import requests
 import asyncio
+import hypixel
 
 
 class Overlay():
@@ -13,7 +14,6 @@ class Overlay():
 
     def __init__(self):
         self.currentPlayers = []
-        self.antisniper_api = "http://api.antisniper.net/antisniper?key={api_key}&uuid={uuid}"
 
     @classmethod
     def get_file(cls) -> str:
@@ -42,6 +42,11 @@ class Stats():
 
     def __init__(self):
         self.cachePlayers = []
+
+        # APIs
+        self.MojangAPI = "https://api.mojang.com/users/profiles/minecraft/{}?"
+        self.HypixelAPI = "https://api.hypixel.net/player?key={}&uuid={}"
+        self.AntiSniperAPI = "http://api.antisniper.net/antisniper?key={}&{}={}"
 
     def get_uuid(self, player:str) -> str:
         return
