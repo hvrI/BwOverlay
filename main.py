@@ -1,22 +1,31 @@
 import os
+import psutil
 import requests
 import asyncio
 
 
 class Overlay():
 
-    user_path = '/'.join(os.getcwd().split('\\', 3)[:3])
+    user_path = '\\'.join(os.getcwd().split('\\', 3)[:3])
     logFiles = {
         "Minecraft" : f"{user_path}\\AppData\\Roaming\\.minecraft\\logs\\latest.log",
         "Lunar Client" : f"{user_path}\\.lunarclient\\logs\\launcher\\renderer.log"
     }
+    Minecraft = Lunar_Client = None
+
 
     def __init__(self):
         self.currentPlayers = []
 
     @classmethod
+    def get_PID(cls, name:str):
+        return [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()][0]
+
+    @classmethod
     def get_file(cls) -> str:
-        return
+        for file in cls.logFiles.values():
+            if os.path.isfile(file) and os.path.getmtime(file) >= psutil.Process(cls.get_PID("javaw.exe")).create_time():
+                return file
 
     def get_all_players(self, line:str) -> list:
         return
@@ -35,6 +44,9 @@ class Overlay():
 
     def reset_all(self) -> None:
         pass
+    
+    def launcher(self):
+        print(self.get_file())
 
 
 class Stats():
@@ -62,4 +74,7 @@ class Stats():
     def get_overall_stats(self, player:str) -> tuple:
         return
 
+if __name__ == "__main__":
+    overlay = Overlay()
+    overlay.launcher()
 
