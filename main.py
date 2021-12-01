@@ -88,24 +88,27 @@ class Stats():
 
 
     def get_uuid(self, player:str) -> str:
+        """Get player's UUID"""
         response = requests.get(self.MojangAPI.format(player))
         if response.status_code != 200:
             denick = self.denick(player)
             if not denick:
                 return denick
-            return denick
+            return denick # Return uuid if can be denicked
         return response.json()["id"]
 
 
     def get_player_data(self, player:str):
+        """Get player's Hypixel Player Data"""
         uuid = self.get_uuid(player)
         if not uuid:
-            return
-        return requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)).json()["player"]
+            return "NICKED" # Denick Unsuccessful
+        return requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid))
 
 
     def get_rank(self, player:str) -> str:
-        data = self.get_player_data(self.get_uuid(player))
+        """Get Player's Hypixel Rank"""
+        data = self.get_player_data(self.get_uuid(player)).json()["player"]
         rank = data["newPackageRank"]
         if "newPackageRank" not in data:
             return ""
@@ -129,8 +132,14 @@ class Stats():
 
 
     def check_sniper(self, player:str):
-        response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", self.get_player_data(player)["displayname"]))
-        return
+        data = self.get_player_data(player)
+        if data.status_code != 200:
+            return None
+        display_name = data.json()["player"]["displayname"]
+        response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
+        if response.status_code != 200:
+            return None
+        return bool(response["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] <= 25.0)
 
 
     def get_overall_stats(self, player:str) -> tuple:
