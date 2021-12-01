@@ -3,8 +3,10 @@ import psutil
 import requests
 import asyncio
 
+from threading import Thread
+from dotenv import load_dotenv
 
-class Overlay():
+class Overlay(Thread):
 
     user_path = '\\'.join(os.getcwd().split('\\', 3)[:3])
     logFiles = {
@@ -13,6 +15,7 @@ class Overlay():
     }
 
     def __init__(self):
+        super().__init__()
         self.currentPlayers = []
 
 
@@ -36,23 +39,27 @@ class Overlay():
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
-    def get_all_players(self, log:str=read_log_file()) -> list:
+    def get_all_players(self) -> list:
+        log = self.read_log_file()
         if "[CHAT] ONLINE: " in log:
             self.reset_all()
             self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
 
 
-    def check_new_lobby(self, log:str=read_log_file()) -> bool:
+    def check_new_lobby(self) -> bool:
+        log = self.read_log_file()
         if "Sending you to mini" in log:
             self.reset_all()
 
 
-    def player_joined(self, log:str=read_log_file()) -> str:
+    def player_joined(self) -> str:
+        log = self.read_log_file()
         if "has joined (" in log:
             return log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
 
 
-    def player_quit(self, log:str=read_log_file()) -> str:
+    def player_quit(self) -> str:
+        log = self.read_log_file()
         if "has quit!" in log:
             return log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
 
@@ -61,8 +68,8 @@ class Overlay():
         self.currentPlayers.clear()
     
 
-    def launcher(self):
-        print(self.read_log_file())
+    def run(self):
+        pass
 
 
 class Stats():
@@ -79,7 +86,10 @@ class Stats():
     def get_uuid(self, player:str) -> str:
         response = requests.get(self.MojangAPI.format(player))
         if response.status_code != 200:
-            return self.denick(player)
+            denick = self.denick(player)
+            if not denick:
+                return denick
+            return denick
         return response.json()["id"]
 
     def get_player_data(self, uuid:str):
@@ -106,7 +116,7 @@ class Stats():
     def denick(self, nick:str) -> str:
         response = requests.get(self.AntiSniperAPI.format("denick", os.getenv("AntiSniper_API_KEY"), "nick", nick))
         if response.status_code != 200:
-            return
+            return None
         return response.json()["player"]["uuid"]
 
 
@@ -119,6 +129,7 @@ class Stats():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     overlay = Overlay()
-    overlay.launcher()
+    overlay.start()
 
