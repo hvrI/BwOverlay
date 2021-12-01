@@ -5,6 +5,7 @@ import asyncio
 
 from threading import Thread
 from dotenv import load_dotenv
+from requests import status_codes
 
 class Overlay(Thread):
 
@@ -75,7 +76,7 @@ class Overlay(Thread):
 class Stats():
 
     def __init__(self):
-        self.cachePlayers = []
+        self.cachePlayers = {}
 
         # APIs
         self.MojangAPI = "https://api.mojang.com/users/profiles/minecraft/{}?"
@@ -141,8 +142,27 @@ class Stats():
             return None
         return bool(response["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] <= 25.0)
 
+    def get_estimate_winstreak(self, player:str):
+        response = requests.get(self.AntiSniperAPI.format("winstreak", self.antisniper_ApiKey, "name", player))
+        if response.status_codes != 200:
+            return 0
+        return response.json()
+        
 
     def get_overall_stats(self, player:str) -> tuple:
+        data = self.get_player_data(player)
+        if data == "NICKED":
+            return
+        data = data["player"]
+        display_name = data["displayname"]
+        bedwarsData = data["stats"]["Bedwars"]
+        stars = data["achievements"]["bedwars_level"]
+        wlr = round(bedwarsData["wins_bedwars"] / bedwarsData["losses_bedwars"], 2)
+        fkdr = round(bedwarsData["final_kills_bedwars"] / bedwarsData["final_deaths_bedwars"], 2)
+        try:
+            winstreak = bedwarsData["winstreak"]
+        except KeyError:
+            winstreak = self.get_estimate_winstreak(display_name)
         return
 
 
