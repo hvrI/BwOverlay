@@ -11,8 +11,6 @@ class Overlay():
         "Minecraft" : f"{user_path}\\AppData\\Roaming\\.minecraft\\logs\\latest.log",
         "Lunar Client" : f"{user_path}\\.lunarclient\\logs\\launcher\\renderer.log"
     }
-    Minecraft = Lunar_Client = None
-
 
     def __init__(self):
         self.currentPlayers = []
