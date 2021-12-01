@@ -42,10 +42,6 @@ class Overlay():
             self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
 
 
-    def get_player(self, player:str) -> str:
-        return
-
-
     def check_new_lobby(self, log:str=read_log_file()) -> bool:
         if "Sending you to mini" in log:
             self.reset_all()
@@ -62,7 +58,7 @@ class Overlay():
 
 
     def reset_all(self) -> None:
-        pass
+        self.currentPlayers.clear()
     
 
     def launcher(self):
@@ -77,19 +73,41 @@ class Stats():
         # APIs
         self.MojangAPI = "https://api.mojang.com/users/profiles/minecraft/{}?"
         self.HypixelAPI = "https://api.hypixel.net/player?key={}&uuid={}"
-        self.AntiSniperAPI = "http://api.antisniper.net/antisniper?key={}&{}={}"
+        self.AntiSniperAPI = "http://api.antisniper.net/{}?key={}&{}={}"
 
 
     def get_uuid(self, player:str) -> str:
-        return
+        response = requests.get(self.MojangAPI.format(player))
+        if response.status_code != 200:
+            return self.denick(player)
+        return response.json()["id"]
+
+    def get_player_data(self, uuid:str):
+        return requests.get(self.HypixelAPI.format(os.getenv("Hypixel_API_KEY"), uuid)).json()["player"]
 
 
     def get_rank(self, player:str) -> str:
-        return
+        data = self.get_player_data(self.get_uuid(player))
+        rank = data["newPackageRank"]
+        if "newPackageRank" not in data:
+            return ""
+        if rank == 'MVP':
+            return "[MVP]"
+        elif rank == 'MVP_PLUS':
+            if "monthlyPackageRank" in data:
+                mvp_plus_plus = data["monthlyPackageRank"]
+                return "[MVP+]" if mvp_plus_plus == "NONE" else "[MVP++]"
+        elif rank == 'VIP':
+            return "[VIP]"
+        elif rank == 'VIP_PLUS':
+            return "[VIP+]"
     
 
     def denick(self, nick:str) -> str:
-        return
+        response = requests.get(self.AntiSniperAPI.format("denick", os.getenv("AntiSniper_API_KEY"), "nick", nick))
+        if response.status_code != 200:
+            return
+        return response.json()["player"]["uuid"]
 
 
     def check_sniper(self, player:str):
