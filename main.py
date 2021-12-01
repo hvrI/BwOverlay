@@ -16,25 +16,25 @@ class Overlay():
         self.antisniper_api = "http://api.antisniper.net/antisniper?key={api_key}&uuid={uuid}"
 
     @classmethod
-    def get_file(cls):
+    def get_file(cls) -> str:
         return
 
-    def get_all_players(self, line:str):
+    def get_all_players(self, line:str) -> list:
         return
 
-    def get_player(self, player:str):
-        pass
+    def get_player(self, player:str) -> str:
+        return
 
     def check_new_lobby(self) -> bool:
         return
 
-    def player_joined(self):
-        pass
+    def player_joined(self) -> str:
+        return
 
-    def player_quit(self):
-        pass
+    def player_quit(self) -> str:
+        return
 
-    def reset_all(self):
+    def reset_all(self) -> None:
         pass
 
 
@@ -48,7 +48,14 @@ class Stats():
 
     def get_rank(self, player:str) -> str:
         return
+    
+    def denick(self, nick:str) -> str:
+        return
+
+    def check_sniper(self, player:str):
+        return
 
     def get_overall_stats(self, player:str) -> tuple:
         return
+
 
