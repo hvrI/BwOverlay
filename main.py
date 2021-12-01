@@ -82,6 +82,10 @@ class Stats():
         self.HypixelAPI = "https://api.hypixel.net/player?key={}&uuid={}"
         self.AntiSniperAPI = "http://api.antisniper.net/{}?key={}&{}={}"
 
+        # API Keys
+        self.hypixel_ApiKey = os.getenv("Hypixel_API_KEY")
+        self.antisniper_ApiKey = os.getenv("AntiSniper_API_KEY")
+
 
     def get_uuid(self, player:str) -> str:
         response = requests.get(self.MojangAPI.format(player))
@@ -92,8 +96,12 @@ class Stats():
             return denick
         return response.json()["id"]
 
-    def get_player_data(self, uuid:str):
-        return requests.get(self.HypixelAPI.format(os.getenv("Hypixel_API_KEY"), uuid)).json()["player"]
+
+    def get_player_data(self, player:str):
+        uuid = self.get_uuid(player)
+        if not uuid:
+            return
+        return requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)).json()["player"]
 
 
     def get_rank(self, player:str) -> str:
@@ -114,13 +122,14 @@ class Stats():
     
 
     def denick(self, nick:str) -> str:
-        response = requests.get(self.AntiSniperAPI.format("denick", os.getenv("AntiSniper_API_KEY"), "nick", nick))
+        response = requests.get(self.AntiSniperAPI.format("denick", self.antisniper_ApiKey, "nick", nick))
         if response.status_code != 200:
             return None
         return response.json()["player"]["uuid"]
 
 
     def check_sniper(self, player:str):
+        response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", self.get_player_data(player)["displayname"]))
         return
 
 
