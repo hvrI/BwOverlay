@@ -1,7 +1,6 @@
 import os
 import psutil
 import requests
-import asyncio
 import concurrent.futures
 
 from multiprocessing.pool import ThreadPool
