@@ -1,4 +1,5 @@
 import os
+import sys
 import psutil
 import requests
 import concurrent.futures
@@ -25,7 +26,11 @@ class Overlay(Thread):
     @classmethod
     def get_PID(cls, name:str):
         """Get Process's PID"""
-        return [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()][0]
+        result = [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()]
+        if result == []:
+            print("You do not have Minecraft running.")
+            sys.exit(1)
+        return result[0]
 
 
     @classmethod
@@ -38,7 +43,7 @@ class Overlay(Thread):
 
     def read_log_file(self) -> str:
         """Return The Last Line of "[CHAT]" Log"""
-        with open(Overlay.logFiles["Lunar Client"]) as logFile:
+        with open(self.get_file()) as logFile:
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
