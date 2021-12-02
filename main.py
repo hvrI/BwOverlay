@@ -136,14 +136,15 @@ class Stats():
 
 
     def check_sniper(self, display_name:str):
-
+        """If player requeues a weight above 25.0"""
         response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
         if response.status_code != 200:
             return None
-        return bool(response["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] <= 25.0)
+        return bool(response.json()["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 25.0)
 
 
     def get_estimate_winstreak(self, player:str):
+        """Get player's estimated winstreak"""
         response = requests.get(self.AntiSniperAPI.format("winstreak", self.antisniper_ApiKey, "name", player))
         if response.status_code != 200:
             return 0
@@ -154,7 +155,7 @@ class Stats():
         data = self.get_player_data(player)
         
         if data == "NICKED":
-            return player, "NICKED"
+            return (player, "NICKED",)
         nick = player if data[1] == "DENICKED" else None
             
         rank = self.get_rank(data[0].json()["player"])
@@ -173,8 +174,8 @@ class Stats():
             if is_sniper is None:
                 is_sniper = False
             if not nick:
-                return (rank, display_name, stars, wlr, fkdr, winstreak, is_sniper) # If no nick
-            return (rank, display_name, stars, wlr, fkdr, winstreak, nick, is_sniper) # If nicked + denicked
+                return self.cachePlayers.update({display_name : (rank, stars, wlr, fkdr, winstreak, is_sniper)}) # If no nick
+            return self.cachePlayers.update({display_name : (rank, stars, wlr, fkdr, winstreak, nick, is_sniper)}) # If nicked + denicked
 
 
 if __name__ == "__main__":
