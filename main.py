@@ -2,7 +2,9 @@ import os
 import psutil
 import requests
 import asyncio
+import concurrent.futures
 
+from multiprocessing.pool import ThreadPool
 from threading import Thread
 from dotenv import load_dotenv
 
@@ -16,6 +18,7 @@ class Overlay(Thread):
 
     def __init__(self):
         super().__init__()
+        self.cachePlayers = {}
         self.currentPlayers = []
         self.check = True
 
@@ -40,67 +43,45 @@ class Overlay(Thread):
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
-    def get_all_players(self) -> list:
-        log = self.read_log_file()
-        if "[CHAT] ONLINE: " in log:
-            self.reset_all()
-            self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
-
-
-    def check_new_lobby(self):
-        log = self.read_log_file()
-        if "Sending you to mini" in log:
-            self.reset_all()
-            self.check = True
-
-
-    def player_joined(self) -> str:
-        log = self.read_log_file()
-        if "has joined (" in log:
-            self.check = True
-            return log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
-
-
-    def player_quit(self) -> str:
-        log = self.read_log_file()
-        if "has quit!" in log:
-            self.check = True
-            return log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
-
-
     def reset_all(self) -> None:
         self.currentPlayers.clear()
 
+
     def get_all_stats(self):
         stats = Stats()
-        for player in self.currentPlayers:
-            Thread(target=stats.get_overall_stats, args=[player]).start()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = [executor.submit(stats.get_overall_stats, player) for player in self.currentPlayers]
+            for f in concurrent.futures.as_completed(results):
+                self.cachePlayers.update(f.result())
+
 
     def get_stats(self, player:str):
         stats = Stats()
-        Thread(target=stats.get_overall_stats, args=[player]).start()
-    
+        pool = ThreadPool(processes=1)
+        t = pool.apply_async(stats.get_overall_stats, (player,))
+        return t.get()
+ 
 
     def run(self):
-        stats = Stats()
         while 1:
             log = self.read_log_file()
             if "Sending you to mini" in log:
                 self.reset_all()
                 self.check = True
+
             if self.check and "[CHAT] ONLINE: " in log:
                 self.reset_all()
                 self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
+                self.get_all_stats()
                 self.check = False
 
             if "has joined (" in log:
                 self.check = True
                 new_player = log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
                 if new_player not in self.currentPlayers:
-                    self.get_stats(new_player)
                     self.currentPlayers.append(new_player)
-                    print(stats.cachePlayers)
-
+                    self.cachePlayers.update(self.get_stats(new_player))
+            
             if "has quit!" in log:
                 self.check = True
                 left_player = log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
@@ -111,6 +92,7 @@ class Overlay(Thread):
 class Stats():
 
     def __init__(self):
+
         self.cachePlayers = {}
 
         # APIs
@@ -140,7 +122,7 @@ class Stats():
         if not uuid:
             return "NICKED" # Denick Unsuccessful
         if not uuid[1]:
-            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "DENICKED")
+            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid[0])), "DENICKED")
         else:
             return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "Not Nick")
 
@@ -175,7 +157,7 @@ class Stats():
         response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
         if response.status_code != 200:
             return None
-        return bool(response.json()["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 25.0)
+        return bool(response.json()["data"][display_name.lower()]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 25.0)
 
 
     def get_estimate_winstreak(self, player:str):
@@ -186,15 +168,13 @@ class Stats():
         return response.json()["player"]["data"]["overall_winstreak"]
         
 
-    def get_overall_stats(self, player:str) -> tuple:
+    def get_overall_stats(self, player:str) -> dict:
         data = self.get_player_data(player)
-        
         if data == "NICKED":
-            return (player, "NICKED",)
+            return {player : ("NICKED",)}
         nick = player if data[1] == "DENICKED" else None
-            
-        rank = self.get_rank(data[0].json()["player"])
         data = data[0].json()["player"]
+        rank = self.get_rank(data)
         display_name = data["displayname"]
         is_sniper = self.check_sniper(display_name)
         bedwarsData = data["stats"]["Bedwars"]
@@ -209,8 +189,9 @@ class Stats():
             if is_sniper is None:
                 is_sniper = False
             if not nick:
-                return self.cachePlayers.update({display_name : (rank, stars, wlr, fkdr, winstreak, is_sniper)}) # If no nick
-            return self.cachePlayers.update({display_name : (rank, stars, wlr, fkdr, winstreak, nick, is_sniper)}) # If nicked + denicked
+                return {display_name : (rank, stars, wlr, fkdr, winstreak, is_sniper)} # If no nick
+            return {display_name : (rank, stars, wlr, fkdr, winstreak, nick, is_sniper)} # If nicked + denicked
+
 
 
 if __name__ == "__main__":
