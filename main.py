@@ -68,7 +68,14 @@ class Overlay(Thread):
 
 
     def update_display(self):
-        pass
+        os.system("cls")
+        for player, stats in self.cachePlayers.items():
+            if len(stats) == 1:
+                print(f"{player} | tag: {stats[0]}")
+            elif len(stats) == 6:
+                print(f"{stats[0]} {player} stars: {stats[1]}| WS: {stats[4]} FKDR: {stats[3]} WLR: {2} Sniper: {stats[5]}")
+            else:
+                print(f"{stats[0]} {player} stars: {stats[1]}| WS: {stats[4]} FKDR: {stats[3]} WLR: {2} Nick: {stats[5]} Sniper: {stats[6]}")
  
 
     def run(self):
@@ -83,6 +90,7 @@ class Overlay(Thread):
                 self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
                 self.get_all_stats()
                 self.check = False
+                self.update_display()
 
             if "has joined (" in log:
                 self.check = True
@@ -90,6 +98,7 @@ class Overlay(Thread):
                 if new_player not in self.currentPlayers:
                     self.currentPlayers.append(new_player)
                     self.cachePlayers.update(self.get_stats(new_player))
+                    self.update_display()
             
             if "has quit!" in log:
                 self.check = True
@@ -136,9 +145,9 @@ class Stats():
 
     def get_rank(self, data) -> str:
         """Get Player's Hypixel Rank"""
-        rank = data["newPackageRank"]
         if "newPackageRank" not in data:
             return ""
+        rank = data["newPackageRank"]
         if rank == 'MVP':
             return "[MVP]"
         elif rank == 'MVP_PLUS':
@@ -185,9 +194,15 @@ class Stats():
         display_name = data["displayname"]
         is_sniper = self.check_sniper(display_name)
         bedwarsData = data["stats"]["Bedwars"]
-        stars = data["achievements"]["bedwars_level"]
-        wlr = round(bedwarsData["wins_bedwars"] / bedwarsData["losses_bedwars"], 2)
-        fkdr = round(bedwarsData["final_kills_bedwars"] / bedwarsData["final_deaths_bedwars"], 2)
+        stars = data["achievements"].get("bedwars_level", 0)
+        try:
+            wlr = round(bedwarsData.get("wins_bedwars", 0) / bedwarsData.get("losses_bedwars", 0), 2)
+        except ZeroDivisionError:
+            wlr = bedwarsData.get("wins_bedwars", 0)
+        try:
+            fkdr = round(bedwarsData.get("final_kills_bedwars", 0) / bedwarsData.get("final_deaths_bedwars", 0), 2)
+        except ZeroDivisionError:
+            fkdr = bedwarsData.get("final_kills_bedwars", 0)
         try:
             winstreak = bedwarsData["winstreak"]
         except KeyError: # If winstreak API is off
