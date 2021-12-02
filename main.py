@@ -1,4 +1,5 @@
 import os
+import sys
 import psutil
 import requests
 import concurrent.futures
@@ -25,7 +26,11 @@ class Overlay(Thread):
     @classmethod
     def get_PID(cls, name:str):
         """Get Process's PID"""
-        return [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()][0]
+        result = [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()]
+        if result == []:
+            print("You do not have Minecraft running.")
+            sys.exit(1)
+        return result[0]
 
 
     @classmethod
@@ -44,6 +49,7 @@ class Overlay(Thread):
 
     def reset_all(self) -> None:
         self.currentPlayers.clear()
+        self.cachePlayers.clear()
 
 
     def get_all_stats(self):
@@ -59,6 +65,10 @@ class Overlay(Thread):
         pool = ThreadPool(processes=1)
         t = pool.apply_async(stats.get_overall_stats, (player,))
         return t.get()
+
+
+    def update_display(self):
+        pass
  
 
     def run(self):
@@ -91,8 +101,6 @@ class Overlay(Thread):
 class Stats():
 
     def __init__(self):
-
-        self.cachePlayers = {}
 
         # APIs
         self.MojangAPI = "https://api.mojang.com/users/profiles/minecraft/{}?"
