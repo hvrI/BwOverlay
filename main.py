@@ -88,14 +88,14 @@ class Stats():
         self.antisniper_ApiKey = os.getenv("AntiSniper_API_KEY")
 
 
-    def get_uuid(self, player:str) -> str:
+    def get_uuid(self, player:str):
         """Get player's UUID"""
         response = requests.get(self.MojangAPI.format(player))
         if response.status_code != 200:
             denick = self.denick(player)
             if not denick:
                 return denick
-            return denick # Return uuid if can be denicked
+            return (denick, False) # Return uuid if can be denicked
         return response.json()["id"]
 
 
@@ -104,12 +104,14 @@ class Stats():
         uuid = self.get_uuid(player)
         if not uuid:
             return "NICKED" # Denick Unsuccessful
-        return requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid))
+        if not uuid[1]:
+            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "DENICKED")
+        else:
+            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "Not Nick")
 
 
-    def get_rank(self, player:str) -> str:
+    def get_rank(self, data) -> str:
         """Get Player's Hypixel Rank"""
-        data = self.get_player_data(self.get_uuid(player)).json()["player"]
         rank = data["newPackageRank"]
         if "newPackageRank" not in data:
             return ""
@@ -126,44 +128,53 @@ class Stats():
     
 
     def denick(self, nick:str) -> str:
+        """Denick a nicked player"""
         response = requests.get(self.AntiSniperAPI.format("denick", self.antisniper_ApiKey, "nick", nick))
         if response.status_code != 200:
             return None
         return response.json()["player"]["uuid"]
 
 
-    def check_sniper(self, player:str):
-        data = self.get_player_data(player)
-        if data.status_code != 200:
-            return None
-        display_name = data.json()["player"]["displayname"]
+    def check_sniper(self, display_name:str):
+
         response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
         if response.status_code != 200:
             return None
         return bool(response["data"][display_name]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] <= 25.0)
 
+
     def get_estimate_winstreak(self, player:str):
         response = requests.get(self.AntiSniperAPI.format("winstreak", self.antisniper_ApiKey, "name", player))
-        if response.status_codes != 200:
+        if response.status_code != 200:
             return 0
-        return response.json()
+        return response.json()["player"]["data"]["overall_winstreak"]
         
 
     def get_overall_stats(self, player:str) -> tuple:
         data = self.get_player_data(player)
+        
         if data == "NICKED":
-            return
-        data = data["player"]
+            return player, "NICKED"
+        nick = player if data[1] == "DENICKED" else None
+            
+        rank = self.get_rank(data[0].json()["player"])
+        data = data[0].json()["player"]
         display_name = data["displayname"]
+        is_sniper = self.check_sniper(display_name)
         bedwarsData = data["stats"]["Bedwars"]
         stars = data["achievements"]["bedwars_level"]
         wlr = round(bedwarsData["wins_bedwars"] / bedwarsData["losses_bedwars"], 2)
         fkdr = round(bedwarsData["final_kills_bedwars"] / bedwarsData["final_deaths_bedwars"], 2)
         try:
             winstreak = bedwarsData["winstreak"]
-        except KeyError:
+        except KeyError: # If winstreak API is off
             winstreak = self.get_estimate_winstreak(display_name)
-        return
+        finally:
+            if is_sniper is None:
+                is_sniper = False
+            if not nick:
+                return (rank, display_name, stars, wlr, fkdr, winstreak, is_sniper) # If no nick
+            return (rank, display_name, stars, wlr, fkdr, winstreak, nick, is_sniper) # If nicked + denicked
 
 
 if __name__ == "__main__":
