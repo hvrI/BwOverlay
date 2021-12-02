@@ -43,7 +43,7 @@ class Overlay(Thread):
 
     def read_log_file(self) -> str:
         """Return The Last Line of "[CHAT]" Log"""
-        with open(self.get_file()) as logFile:
+        with open(self.logFiles["Lunar Client"]) as logFile:
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
@@ -173,7 +173,7 @@ class Stats():
         response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
         if response.status_code != 200:
             return None
-        return bool(response.json()["data"][display_name.lower()]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 25.0)
+        return bool(response.json()["data"][display_name.lower()]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 30.0)
 
 
     def get_estimate_winstreak(self, player:str):
