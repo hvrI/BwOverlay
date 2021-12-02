@@ -5,7 +5,6 @@ import asyncio
 
 from threading import Thread
 from dotenv import load_dotenv
-from requests import status_codes
 
 class Overlay(Thread):
 
@@ -18,6 +17,7 @@ class Overlay(Thread):
     def __init__(self):
         super().__init__()
         self.currentPlayers = []
+        self.check = True
 
 
     @classmethod
@@ -47,30 +47,65 @@ class Overlay(Thread):
             self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
 
 
-    def check_new_lobby(self) -> bool:
+    def check_new_lobby(self):
         log = self.read_log_file()
         if "Sending you to mini" in log:
             self.reset_all()
+            self.check = True
 
 
     def player_joined(self) -> str:
         log = self.read_log_file()
         if "has joined (" in log:
+            self.check = True
             return log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
 
 
     def player_quit(self) -> str:
         log = self.read_log_file()
         if "has quit!" in log:
+            self.check = True
             return log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
 
 
     def reset_all(self) -> None:
         self.currentPlayers.clear()
+
+    def get_all_stats(self):
+        stats = Stats()
+        for player in self.currentPlayers:
+            Thread(target=stats.get_overall_stats, args=[player]).start()
+
+    def get_stats(self, player:str):
+        stats = Stats()
+        Thread(target=stats.get_overall_stats, args=[player]).start()
     
 
     def run(self):
-        pass
+        stats = Stats()
+        while 1:
+            log = self.read_log_file()
+            if "Sending you to mini" in log:
+                self.reset_all()
+                self.check = True
+            if self.check and "[CHAT] ONLINE: " in log:
+                self.reset_all()
+                self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
+                self.check = False
+
+            if "has joined (" in log:
+                self.check = True
+                new_player = log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
+                if new_player not in self.currentPlayers:
+                    self.get_stats(new_player)
+                    self.currentPlayers.append(new_player)
+                    print(stats.cachePlayers)
+
+            if "has quit!" in log:
+                self.check = True
+                left_player = log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
+                if left_player in self.currentPlayers:
+                    self.currentPlayers.remove(left_player)
 
 
 class Stats():
