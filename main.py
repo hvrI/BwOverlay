@@ -76,22 +76,18 @@ class Overlay(Thread):
     def update_display(self):
         os.system("cls")
         for player, stats in self.cachePlayers.items():
-            stars = str(stats[1])
-            ws = str(stats[4])
-            fkdr = str(stats[3])
-            wlr = str(stats[2])
+            if len(stats) == 1:
+                print(f"{player:15} | tag: {stats[0]}")
+                continue
+            stats = [str(stat) for stat in stats]
+            rank, stars, wlr, fkdr, ws, sniper, nick = stats
 
             stars+=(" "*(5-len(stars)))
             ws+=(" "*(5-len(ws)))
             fkdr+=(" "*(7-len(fkdr)))
             wlr+=(" "*(7-len(wlr)))
 
-            if len(stats) == 1:
-                print(f"{player:15} | tag: {stats[0]}")
-            elif len(stats) == 6:
-                print(f"{stats[0]} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[5]}")
-            else:
-                print(f"{stats[0]} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[6]}  Nick: {stats[5]}")
+            print(f"{rank} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {sniper:5d}  Nick: {nick}")
  
 
     def run(self):
@@ -231,9 +227,7 @@ class Stats():
         finally:
             if is_sniper is None:
                 is_sniper = False
-            if not nick:
-                return {display_name : (rank, stars, wlr, fkdr, winstreak, is_sniper)} # If no nick
-            return {display_name : (rank, stars, wlr, fkdr, winstreak, nick, is_sniper)} # If nicked + denicked
+            return {display_name : (rank, stars, wlr, fkdr, winstreak, is_sniper, nick)}
 
 
 
