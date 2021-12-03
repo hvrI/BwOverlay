@@ -55,9 +55,9 @@ class Overlay(Thread):
     def get_all_stats(self):
         stats = Stats()
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = [executor.submit(stats.get_overall_stats, player) for player in self.currentPlayers]
-            for f in concurrent.futures.as_completed(results):
-                self.cachePlayers.update(f.result())
+            results = executor.map(stats.get_overall_stats, self.currentPlayers)
+            for f in list(results):
+                self.cachePlayers.update(f)
 
 
     def get_stats(self, player:str):
@@ -70,12 +70,23 @@ class Overlay(Thread):
     def update_display(self):
         os.system("cls")
         for player, stats in self.cachePlayers.items():
+            player+=(" "*(23-(len(player)+len(str(stats[0])))))
+            stars = str(stats[1])
+            ws = str(stats[4])
+            fkdr = str(stats[3])
+            wlr = str(stats[2])
+
+            stars+=(" "*(5-len(stars)))
+            ws+=(" "*(5-len(ws)))
+            fkdr+=(" "*(7-len(fkdr)))
+            wlr+=(" "*(7-len(wlr)))
+
             if len(stats) == 1:
                 print(f"{player} | tag: {stats[0]}")
             elif len(stats) == 6:
-                print(f"{stats[0]} {player} stars: {stats[1]}| WS: {stats[4]} FKDR: {stats[3]} WLR: {2} Sniper: {stats[5]}")
+                print(f"{stats[0]} {player} | stars: {stats[1]} | WS: {stats[4]} FKDR: {stats[3]} WLR: {stats[2]} Sniper: {stats[5]}")
             else:
-                print(f"{stats[0]} {player} stars: {stats[1]}| WS: {stats[4]} FKDR: {stats[3]} WLR: {2} Nick: {stats[5]} Sniper: {stats[6]}")
+                print(f"{stats[0]} {player} | stars: {stats[1]} | WS: {stats[4]} FKDR: {stats[3]} WLR: {stats[2]} Sniper: {stats[6]} Nick: {stats[5]}")
  
 
     def run(self):
