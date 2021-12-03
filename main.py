@@ -2,7 +2,6 @@ import os
 import sys
 import psutil
 import requests
-import concurrent.futures
 
 from multiprocessing.pool import ThreadPool
 from threading import Thread
@@ -43,7 +42,7 @@ class Overlay(Thread):
 
     def read_log_file(self) -> str:
         """Return The Last Line of "[CHAT]" Log"""
-        with open(self.get_file()) as logFile:
+        with open(self.logFiles["Lunar Client"]) as logFile:
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
@@ -53,11 +52,18 @@ class Overlay(Thread):
 
 
     def get_all_stats(self):
-        stats = Stats()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = executor.map(stats.get_overall_stats, self.currentPlayers)
-            for f in list(results):
-                self.cachePlayers.update(f)
+        threads = []
+        def stats(player):
+            stats = Stats()
+            return self.cachePlayers.update(stats.get_overall_stats(player))
+
+        for player in self.currentPlayers:
+            t = Thread(target=stats, args=[player])
+            t.start()
+            threads.append(t)
+
+        for thread in threads:
+            thread.join()
 
 
     def get_stats(self, player:str):
@@ -84,9 +90,9 @@ class Overlay(Thread):
             if len(stats) == 1:
                 print(f"{player} | tag: {stats[0]}")
             elif len(stats) == 6:
-                print(f"{stats[0]} {player} | stars: {stats[1]} | WS: {stats[4]} FKDR: {stats[3]} WLR: {stats[2]} Sniper: {stats[5]}")
+                print(f"{stats[0]} {player} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[5]}")
             else:
-                print(f"{stats[0]} {player} | stars: {stats[1]} | WS: {stats[4]} FKDR: {stats[3]} WLR: {stats[2]} Sniper: {stats[6]} Nick: {stats[5]}")
+                print(f"{stats[0]} {player} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[6]}  Nick: {stats[5]}")
  
 
     def run(self):
