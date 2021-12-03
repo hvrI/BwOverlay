@@ -43,7 +43,7 @@ class Overlay(Thread):
 
     def read_log_file(self) -> str:
         """Return The Last Line of "[CHAT]" Log"""
-        with open(self.logFiles["Lunar Client"]) as logFile:
+        with open(self.get_file()) as logFile:
             return [log.strip() for log in logFile.readlines()[-3:] if log != "\n"][-1]
 
 
