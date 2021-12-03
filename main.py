@@ -76,7 +76,6 @@ class Overlay(Thread):
     def update_display(self):
         os.system("cls")
         for player, stats in self.cachePlayers.items():
-            player+=(" "*(23-(len(player)+len(str(stats[0])))))
             stars = str(stats[1])
             ws = str(stats[4])
             fkdr = str(stats[3])
@@ -88,11 +87,11 @@ class Overlay(Thread):
             wlr+=(" "*(7-len(wlr)))
 
             if len(stats) == 1:
-                print(f"{player} | tag: {stats[0]}")
+                print(f"{player:15} | tag: {stats[0]}")
             elif len(stats) == 6:
-                print(f"{stats[0]} {player} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[5]}")
+                print(f"{stats[0]} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[5]}")
             else:
-                print(f"{stats[0]} {player} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[6]}  Nick: {stats[5]}")
+                print(f"{stats[0]} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {stats[6]}  Nick: {stats[5]}")
  
 
     def run(self):
