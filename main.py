@@ -134,7 +134,8 @@ class Stats():
 
     def get_uuid(self, player:str):
         """Get player's UUID"""
-        response = requests.get(self.MojangAPI.format(player))
+        with requests.Session() as r:
+            response = r.get(self.MojangAPI.format(player))
         if response.status_code != 200:
             denick = self.denick(player)
             if not denick:
@@ -148,10 +149,11 @@ class Stats():
         uuid = self.get_uuid(player)
         if not uuid:
             return "NICKED" # Denick Unsuccessful
-        if not uuid[1]:
-            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid[0])), "DENICKED")
-        else:
-            return (requests.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "Not Nick")
+        with requests.Session() as r:
+            if not uuid[1]:
+                return (r.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid[0])), "DENICKED")
+            else:
+                return (r.get(self.HypixelAPI.format(self.hypixel_ApiKey, uuid)), "Not Nick")
 
 
     def get_rank(self, data) -> str:
@@ -173,7 +175,8 @@ class Stats():
 
     def denick(self, nick:str) -> str:
         """Denick a nicked player"""
-        response = requests.get(self.AntiSniperAPI.format("denick", self.antisniper_ApiKey, "nick", nick))
+        with requests.Session() as r:
+            response = r.get(self.AntiSniperAPI.format("denick", self.antisniper_ApiKey, "nick", nick))
         if response.status_code != 200:
             return None
         return response.json()["player"]["uuid"]
@@ -181,7 +184,8 @@ class Stats():
 
     def check_sniper(self, display_name:str):
         """If player requeues a weight above 25.0"""
-        response = requests.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
+        with requests.Session() as r:
+            response = r.get(self.AntiSniperAPI.format("antisniper", self.antisniper_ApiKey, "name", display_name))
         if response.status_code != 200:
             return None
         return bool(response.json()["data"][display_name.lower()]["queues"]["consecutive_queue_checks"]["weighted"]["1_min_requeue"] >= 30.0)
@@ -189,7 +193,8 @@ class Stats():
 
     def get_estimate_winstreak(self, player:str):
         """Get player's estimated winstreak"""
-        response = requests.get(self.AntiSniperAPI.format("winstreak", self.antisniper_ApiKey, "name", player))
+        with requests.Session() as r:
+            response = r.get(self.AntiSniperAPI.format("winstreak", self.antisniper_ApiKey, "name", player))
         if response.status_code != 200:
             return 0
         return response.json()["player"]["data"]["overall_winstreak"]
