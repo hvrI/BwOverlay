@@ -77,17 +77,17 @@ class Overlay(Thread):
         os.system("cls")
         for player, stats in self.cachePlayers.items():
             if len(stats) == 1:
-                print(f"{player:15} | tag: {stats[0]}")
+                print(f"{player:22} | tag: {stats[0]}")
                 continue
             stats = [str(stat) for stat in stats]
             rank, stars, wlr, fkdr, ws, sniper, nick = stats
-
+            player = f"{rank} {player}"
             stars+=(" "*(5-len(stars)))
             ws+=(" "*(5-len(ws)))
             fkdr+=(" "*(7-len(fkdr)))
             wlr+=(" "*(7-len(wlr)))
 
-            print(f"{rank} {player:15} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {sniper:5d}  Nick: {nick}")
+            print(f"{player:22} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {sniper:5}  Nick: {nick}")
  
 
     def run(self):
