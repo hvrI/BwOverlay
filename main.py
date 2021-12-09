@@ -99,14 +99,14 @@ class Overlay(Thread):
 
             elif self.check and "[CHAT] ONLINE: " in log:
                 self.reset_all()
-                self.currentPlayers = log[log.index("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
+                self.currentPlayers = log[log.find("[CHAT] ONLINE:") + 15:].rstrip("\n").split(", ")
                 self.get_all_stats()
                 self.check = False
                 self.update_display()
 
             elif "has joined (" in log:
                 self.check = True
-                new_player = log[log.index("[CHAT]") + 7:log.index("has joined") - 1]
+                new_player = log[log.find("[CHAT]") + 7:log.index("has joined") - 1]
                 if new_player not in self.currentPlayers:
                     self.currentPlayers.append(new_player)
                     self.cachePlayers.update(self.get_stats(new_player))
@@ -114,7 +114,7 @@ class Overlay(Thread):
             
             elif "has quit!" in log:
                 self.check = True
-                left_player = log[log.index("[CHAT]") + 7:log.index("has quit") - 1]
+                left_player = log[log.find("[CHAT]") + 7:log.index("has quit") - 1]
                 if left_player in self.currentPlayers:
                     self.currentPlayers.remove(left_player)
 
