@@ -26,7 +26,7 @@ class Overlay(Thread):
     def get_PID(cls, name:str):
         """Get Process's PID"""
         result = [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()]
-        if result == []:
+        if not result:
             print("You do not have Minecraft running.")
             sys.exit(1)
         return result[0]
