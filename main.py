@@ -119,6 +119,9 @@ class Overlay(Thread):
                 left_player = log[log.find("[CHAT]") + 7:log.index("has quit") - 1]
                 if left_player in self.currentPlayers:
                     self.currentPlayers.remove(left_player)
+                    if left_player in self.cachePlayers:
+                        del self.cachePlayers[left_player]
+                        self.update_display()
 
 
 class Stats():
@@ -237,4 +240,3 @@ if __name__ == "__main__":
     load_dotenv()
     overlay = Overlay()
     overlay.start()
-
