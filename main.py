@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import psutil
 import requests
 
@@ -28,6 +29,7 @@ class Overlay(Thread):
         result = [p.pid for p in psutil.process_iter(attrs=['pid', 'name']) if name.lower() in p.name().lower()]
         if not result:
             print("You do not have Minecraft running.")
+            time.sleep(5)
             sys.exit(1)
         return result[0]
 
@@ -77,7 +79,7 @@ class Overlay(Thread):
         os.system("cls")
         for player, stats in self.cachePlayers.items():
             if len(stats) == 1:
-                print(f"{player:22} | tag: {stats[0]}")
+                print(f"{player:23} | tag: {stats[0]}")
                 continue
             stats = [str(stat) for stat in stats]
             rank, stars, wlr, fkdr, ws, sniper, nick = stats
@@ -87,7 +89,7 @@ class Overlay(Thread):
             fkdr+=(" "*(7-len(fkdr)))
             wlr+=(" "*(7-len(wlr)))
 
-            print(f"{player:22} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {sniper:5}  Nick: {nick}")
+            print(f"{player:23} | stars: {stars} | WS: {ws} FKDR: {fkdr} WLR: {wlr} Sniper: {sniper:5}  Nick: {nick}")
  
 
     def run(self):
